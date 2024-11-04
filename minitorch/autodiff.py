@@ -23,7 +23,20 @@ def central_difference(f: Any, *vals: Any, arg: int = 0, epsilon: float = 1e-6) 
         An approximation of $f'_i(x_0, \ldots, x_{n-1})$
     """
     # TODO: Implement for Task 1.1.
-    raise NotImplementedError("Need to implement for Task 1.1")
+    vals_p = [x for x in vals]
+    vals_p[arg] += epsilon
+    vals_m = [x for x in vals]
+    vals_m[arg] -= epsilon
+
+    vals_p = tuple(vals_p)
+    vals_m = tuple(vals_m)
+
+    f1 = f(*vals_p)
+    f0 = f(*vals_m)
+
+    f_prime = (f1 - f0) / (2 * epsilon)
+
+    return f_prime
 
 
 variable_count = 1
@@ -62,7 +75,19 @@ def topological_sort(variable: Variable) -> Iterable[Variable]:
         Non-constant Variables in topological order starting from the right.
     """
     # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    visited = set()
+    topo_order = []
+
+    def dfs(node: Variable):
+        if node.unique_id in visited or node.is_constant():
+            return
+        visited.add(node.unique_id)
+        for parent in node.parents:
+            dfs(parent)
+        topo_order.append(node)
+
+    dfs(variable)
+    return topo_order[::-1]
 
 
 def backpropagate(variable: Variable, deriv: Any) -> None:
@@ -77,7 +102,22 @@ def backpropagate(variable: Variable, deriv: Any) -> None:
     No return. Should write to its results to the derivative values of each leaf through `accumulate_derivative`.
     """
     # TODO: Implement for Task 1.4.
-    raise NotImplementedError("Need to implement for Task 1.4")
+    topo_order = topological_sort(variable)
+
+    derivatives = {var.unique_id: 0.0 for var in topo_order}
+
+    derivatives[variable.unique_id] = deriv
+
+    for var in topo_order:
+        grad = derivatives[var.unique_id]
+        if var.is_leaf():
+            var.accumulate_derivative(grad)
+        else:
+            for parent_var, parent_grad in var.chain_rule(grad):
+                if parent_var.unique_id in derivatives:
+                    derivatives[parent_var.unique_id] += parent_grad
+                else:
+                    derivatives[parent_var.unique_id] = parent_grad
 
 
 @dataclass
